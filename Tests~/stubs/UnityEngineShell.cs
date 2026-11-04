@@ -9,6 +9,7 @@ namespace UnityEngine
         public static void Destroy(Object o) { }
         public static void DontDestroyOnLoad(Object o) { }
         public static T Instantiate<T>(T original) where T : Object => original;
+        public static T Instantiate<T>(T original, Transform parent) where T : Object => original;
         public static bool operator ==(Object a, Object b) => ReferenceEquals(a, b);
         public static bool operator !=(Object a, Object b) => !ReferenceEquals(a, b);
         public static implicit operator bool(Object o) => !ReferenceEquals(o, null);
@@ -22,6 +23,7 @@ namespace UnityEngine
         public T GetComponent<T>() => default;
         public T GetComponentInChildren<T>() => default;
         public T GetComponentInParent<T>() => default;
+        public T[] GetComponentsInChildren<T>(bool includeInactive) => new T[0];
         public bool TryGetComponent<T>(out T c) { c = default; return false; }
     }
     public class Behaviour : Component { public bool enabled { get; set; } public bool isActiveAndEnabled => true; }
@@ -56,6 +58,8 @@ namespace UnityEngine
         public void SetParent(Transform p, bool worldStays) { }
         public Transform Find(string n) => null;
         public Vector3 InverseTransformDirection(Vector3 d) => d;
+        public Vector3 TransformPoint(Vector3 p) => p;
+        public Transform parent => null;
         public void SetPositionAndRotation(Vector3 p, Quaternion r) { }
         public IEnumerator GetEnumerator() { yield break; }
     }
@@ -66,6 +70,8 @@ namespace UnityEngine
         public Bounds(Vector3 c, Vector3 s) { }
         public void Encapsulate(Vector3 p) { }
         public Vector3 size => default;
+        public Vector3 center => default;
+        public bool Contains(Vector3 p) => false;
     }
     public struct LayerMask
     {
@@ -92,8 +98,9 @@ namespace UnityEngine
         public void AddForceAtPosition(Vector3 f, Vector3 p, ForceMode m = ForceMode.Force) { }
         public Vector3 GetPointVelocity(Vector3 p) => default;
         public void MoveRotation(Quaternion q) { }
+        public void MovePosition(Vector3 p) { }
     }
-    public class Collider : Component { public Rigidbody attachedRigidbody => null; public bool isTrigger { get; set; } }
+    public class Collider : Component { public Rigidbody attachedRigidbody => null; public bool isTrigger { get; set; } public Bounds bounds => default; }
     public class CapsuleCollider : Collider { }
     public class Collision { public Rigidbody rigidbody => null; public Vector3 relativeVelocity => default; }
     public struct RaycastHit { public Vector3 point; public float distance; public Rigidbody rigidbody => null; }
@@ -102,8 +109,15 @@ namespace UnityEngine
         public static bool SphereCast(Vector3 o, float r, Vector3 d, out RaycastHit h, float max, int mask, QueryTriggerInteraction q) { h = default; return false; }
         public static bool Raycast(Vector3 o, Vector3 d, out RaycastHit h, float max, int mask, QueryTriggerInteraction q) { h = default; return false; }
         public static int OverlapSphereNonAlloc(Vector3 p, float r, Collider[] res, int mask, QueryTriggerInteraction q) => 0;
+        public static int OverlapBoxNonAlloc(Vector3 c, Vector3 half, Collider[] res, Quaternion rot, int mask, QueryTriggerInteraction q) => 0;
     }
     public class Animator : Behaviour { }
+    public class MaterialPropertyBlock { public void SetColor(string n, Color c) { } }
+    public class Renderer : Component
+    {
+        public void GetPropertyBlock(MaterialPropertyBlock b) { }
+        public void SetPropertyBlock(MaterialPropertyBlock b) { }
+    }
     public class Camera : Behaviour
     {
         public static Camera main => null;
@@ -259,6 +273,7 @@ namespace UnityEngine
 
     [AttributeUsage(AttributeTargets.All)] public class SerializeField : Attribute { }
     [AttributeUsage(AttributeTargets.All)] public class HeaderAttribute : Attribute { public HeaderAttribute(string s) { } }
+    [AttributeUsage(AttributeTargets.All)] public class TextAreaAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.All)] public class TooltipAttribute : Attribute { public TooltipAttribute(string s) { } }
     [AttributeUsage(AttributeTargets.All)] public class RangeAttribute : Attribute { public RangeAttribute(float a, float b) { } }
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)] public class RequireComponent : Attribute
@@ -281,7 +296,8 @@ namespace UnityEngine.Android
 namespace UnityEngine.SceneManagement
 {
     public enum LoadSceneMode { Single, Additive }
-    public struct Scene { public int buildIndex => 0; }
+    public struct Scene { public int buildIndex => 0; public string path => ""; }
+    public static class SceneUtility { public static int GetBuildIndexByScenePath(string p) => -1; }
     public static class SceneManager { public static Scene GetActiveScene() => default; }
 }
 namespace UnityEngine.Rendering
@@ -324,6 +340,7 @@ namespace UnityEngine.UI
     public class Graphic : Behaviour { public Color color { get; set; } }
     public class Image : Graphic { public float fillAmount { get; set; } }
     public class Text : Graphic { public string text { get; set; } }
+    public class InputField : Behaviour { public string text { get; set; } }
     public class Button : Behaviour
     {
         public class ButtonClickedEvent { public void AddListener(Action a) { } }

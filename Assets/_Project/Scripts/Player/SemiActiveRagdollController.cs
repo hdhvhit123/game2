@@ -84,6 +84,7 @@ public class SemiActiveRagdollController : NetworkBehaviour, ISlapReceiver
 
     private Rigidbody _rb;
     private Vector3 _spawnPosition;
+    private Vector3 _groundVelocity;
 
     // Trạng thái chỉ dùng cho hiển thị (mọi máy).
     private Vector3 _lastRenderPos;
@@ -128,6 +129,8 @@ public class SemiActiveRagdollController : NetworkBehaviour, ISlapReceiver
 
         float dt = Runner.DeltaTime;
         NetworkInputData input = GetInput(out NetworkInputData i) ? i : default;
+        // Pha giới thiệu / kết quả của màn chơi: khoá điều khiển.
+        if (LevelManager.Current != null && !LevelManager.Current.ControlsEnabled) input = default;
         NetworkButtons pressed = input.buttons.GetPressed(PreviousButtons);
         PreviousButtons = input.buttons;
 
@@ -140,9 +143,11 @@ public class SemiActiveRagdollController : NetworkBehaviour, ISlapReceiver
         float speed = moveSpeed * (IsCarrying ? carrySpeedMultiplier : 1f);
         Vector3 targetVel = new Vector3(move.x, 0f, move.y) * speed;
         Vector3 v = _rb.linearVelocity;
+        // Đứng trên bệ/ghe di động thì đi theo bệ (Floating Capsule không có ma sát với mặt đất).
+        Vector3 carriedVel = IsGrounded ? new Vector3(_groundVelocity.x, 0f, _groundVelocity.z) : Vector3.zero;
         Vector3 horizontalVel = new Vector3(v.x, 0f, v.z);
         float control = (IsGrounded ? 1f : airControl) * (stunned ? 0.1f : 1f);
-        Vector3 steer = CoopPhysicsMath.SteeringAcceleration(horizontalVel, targetVel, acceleration * control, maxMoveAcceleration);
+        Vector3 steer = CoopPhysicsMath.SteeringAcceleration(horizontalVel, targetVel + carriedVel, acceleration * control, maxMoveAcceleration);
         _rb.AddForce(steer, ForceMode.Acceleration);
 
         if (!stunned && targetVel.sqrMagnitude > 0.1f)
@@ -176,7 +181,7 @@ public class SemiActiveRagdollController : NetworkBehaviour, ISlapReceiver
 
         ApplyTether();
 
-        if (transform.position.y < killY) Respawn();
+        if (transform.position.y < killY) RespawnAtCheckpoint();
     }
 
     private void ApplyFloatingSpring()
@@ -187,12 +192,18 @@ public class SemiActiveRagdollController : NetworkBehaviour, ISlapReceiver
             return;
         }
 
+        _groundVelocity = Vector3.zero;
         if (Physics.SphereCast(transform.position, 0.25f, Vector3.down, out RaycastHit hit, raycastLength, groundMask, QueryTriggerInteraction.Ignore)
             && hit.rigidbody != _rb)
         {
+            if (hit.rigidbody != null && hit.rigidbody.TryGetComponent(out KinematicMover mover))
+                _groundVelocity = mover.GetPointVelocity(hit.point);
+            else if (hit.rigidbody != null)
+                _groundVelocity = hit.rigidbody.GetPointVelocity(hit.point);
+
             IsGrounded = hit.distance <= rideHeight + 0.15f;
 
-            float groundVelY = hit.rigidbody != null ? hit.rigidbody.GetPointVelocity(hit.point).y : 0f;
+            float groundVelY = _groundVelocity.y;
             float relVelY = _rb.linearVelocity.y - groundVelY;
             float accel = CoopPhysicsMath.RideSpringAcceleration(hit.distance, rideHeight, relVelY,
                                                                   rideSpringStrength, rideSpringDamper, maxSpringAcceleration);
@@ -272,11 +283,28 @@ public class SemiActiveRagdollController : NetworkBehaviour, ISlapReceiver
         IsCarrying = false;
     }
 
-    private void Respawn()
+    /// <summary>Rơi khỏi map / chạm vùng chết: về checkpoint (chỉ host).</summary>
+    public void RespawnAtCheckpoint()
     {
+        if (!HasStateAuthority) return;
         int index = All.IndexOf(this);
-        Vector3 basePos = CheckpointZone.Current != null ? CheckpointZone.Current.GetPlayerSpawn(index) : _spawnPosition;
+        Vector3 basePos;
+        if (CheckpointZone.Current != null) basePos = CheckpointZone.Current.GetPlayerSpawn(index);
+        else if (LevelManager.Current != null) basePos = LevelManager.Current.GetPlayerSpawn(index);
+        else basePos = _spawnPosition;
         TeleportTo(basePos + Vector3.up * 0.5f);
+        if (LevelManager.Current != null) LevelManager.Current.ReportFall();
+    }
+
+    /// <summary>Lực từ bên ngoài (vật nặng ghì lại, gió...). Chỉ host.</summary>
+    public void ApplyExternalForce(Vector3 force)
+    {
+        if (HasStateAuthority && _rb != null) _rb.AddForce(force, ForceMode.Force);
+    }
+
+    public void ApplyExternalAcceleration(Vector3 accel)
+    {
+        if (HasStateAuthority && _rb != null) _rb.AddForce(accel, ForceMode.Acceleration);
     }
 
     // ------------------------------------------------------------------ Hiển thị (mọi máy)

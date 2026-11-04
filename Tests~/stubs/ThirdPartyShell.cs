@@ -56,8 +56,18 @@ namespace Fusion
         public NetworkSceneInfo? Scene;
         public INetworkSceneManager SceneManager;
     }
+    public struct Tick
+    {
+        public int Raw;
+        public static implicit operator int(Tick t) => t.Raw;
+    }
+    public struct NetworkSceneAsyncOp { }
     public class NetworkRunner : MonoBehaviour
     {
+        public Tick Tick => default;
+        public float LocalAlpha => 0f;
+        public bool IsSceneAuthority => true;
+        public NetworkSceneAsyncOp LoadScene(SceneRef s, UnityEngine.SceneManagement.LoadSceneMode m = 0) => default;
         public bool ProvideInput { get; set; }
         public bool IsRunning => true;
         public bool IsServer => true;

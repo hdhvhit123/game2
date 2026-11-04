@@ -5,7 +5,7 @@ using UnityEngine;
 public static class Tests
 {
     static int _pass, _fail;
-    static void Check(bool cond, string name, string detail = "")
+    internal static void Check(bool cond, string name, string detail = "")
     {
         if (cond) { _pass++; Console.WriteLine($"  PASS  {name} {detail}"); }
         else { _fail++; Console.WriteLine($"  FAIL  {name} {detail}"); }
@@ -19,6 +19,7 @@ public static class Tests
         Console.WriteLine("== Verlet rope"); RopeTests();
         Console.WriteLine("== Pot stability"); PotTests();
         Console.WriteLine("== FrameRing & Collage"); RecorderTests();
+        LevelTests.Run();
         Console.WriteLine($"\nTONG KET: {_pass} pass, {_fail} fail");
         return _fail == 0 ? 0 : 1;
     }

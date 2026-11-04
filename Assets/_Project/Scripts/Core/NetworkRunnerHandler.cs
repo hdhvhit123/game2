@@ -35,6 +35,8 @@ public class NetworkRunnerHandler : MonoBehaviour, INetworkRunnerCallbacks
     private bool _quitting;
     private int _reconnectAttempt;
     private bool _reconnectLoopRunning;
+    private int _startSceneOverride = -1;
+    private GameMode _nextGameMode = GameMode.AutoHostOrClient;
 
     private void Awake()
     {
@@ -57,9 +59,22 @@ public class NetworkRunnerHandler : MonoBehaviour, INetworkRunnerCallbacks
     /// <summary>Tạo phòng mới với mã ngẫu nhiên rồi vào luôn (người mời bấm nút này).</summary>
     public Task<bool> CreateNewRoom() => StartCoopSession(RoomCode.Generate());
 
+    /// <summary>Tạo phòng mới và bắt đầu ở màn chỉ định (từ menu chọn màn). Người vào sau tự tải đúng màn của host.</summary>
+    public Task<bool> CreateNewRoom(int sceneBuildIndex) =>
+        StartSession(RoomCode.Generate(), GameMode.AutoHostOrClient, sceneBuildIndex);
+
+    /// <summary>
+    /// Vào phòng của bạn bằng mã nhập tay: chỉ vào làm khách, không tự tạo phòng mới
+    /// (tránh trường hợp gõ sai mã rồi ngồi một mình trong phòng trống).
+    /// </summary>
+    public Task<bool> JoinRoom(string roomCode) => StartSession(roomCode, GameMode.Client, -1);
+
     public string BuildInviteUrl() => RoomCode.BuildInviteUrl(inviteHost, CurrentRoomCode);
 
-    public async Task<bool> StartCoopSession(string roomCode)
+    /// <summary>Mở từ link mời: vào phòng nếu có, chưa có thì tự làm host (người mời có thể đã thoát).</summary>
+    public Task<bool> StartCoopSession(string roomCode) => StartSession(roomCode, GameMode.AutoHostOrClient, -1);
+
+    private async Task<bool> StartSession(string roomCode, GameMode mode, int sceneOverride)
     {
         if (!RoomCode.TrySanitize(roomCode, out string code))
         {
@@ -71,6 +86,8 @@ public class NetworkRunnerHandler : MonoBehaviour, INetworkRunnerCallbacks
         if (_currentRunner != null && _currentRunner.IsRunning && CurrentRoomCode == code) return true;
 
         _reconnectAttempt = 0;
+        _nextGameMode = mode;
+        _startSceneOverride = sceneOverride;
         return await StartInternal(code, ConnectionState.Connecting);
     }
 
@@ -92,20 +109,25 @@ public class NetworkRunnerHandler : MonoBehaviour, INetworkRunnerCallbacks
             var sceneManager = _currentRunner.GetComponent<NetworkSceneManagerDefault>();
             if (sceneManager == null) sceneManager = _currentRunner.gameObject.AddComponent<NetworkSceneManagerDefault>();
 
-            int sceneIndex = gameplaySceneBuildIndex >= 0 ? gameplaySceneBuildIndex : SceneManager.GetActiveScene().buildIndex;
+            int sceneIndex = _startSceneOverride >= 0 ? _startSceneOverride
+                : gameplaySceneBuildIndex >= 0 ? gameplaySceneBuildIndex
+                : SceneManager.GetActiveScene().buildIndex;
+            _startSceneOverride = -1;
             var sceneInfo = new NetworkSceneInfo();
             SceneRef sceneRef = SceneRef.FromIndex(sceneIndex);
             if (sceneRef.IsValid) sceneInfo.AddSceneRef(sceneRef, LoadSceneMode.Single);
 
             var startArgs = new StartGameArgs
             {
-                GameMode = GameMode.AutoHostOrClient,
+                GameMode = _nextGameMode,
                 SessionName = code,
                 PlayerCount = 2,
                 Scene = sceneInfo, // bản cũ không truyền scene nên nồi lẩu (scene object) không được đăng ký mạng
                 SceneManager = sceneManager
             };
 
+            // Kết nối lại luôn dùng AutoHostOrClient để người còn lại thành host nếu host cũ thoát.
+            _nextGameMode = GameMode.AutoHostOrClient;
             StartGameResult result = await _currentRunner.StartGame(startArgs);
             if (this == null) return false;
 
@@ -204,6 +226,7 @@ public class NetworkRunnerHandler : MonoBehaviour, INetworkRunnerCallbacks
     private Vector3 GetSpawnPosition(PlayerRef player)
     {
         int index = _spawnedPlayers.Count;
+        if (LevelManager.Current != null) return LevelManager.Current.GetPlayerSpawn(index);
         if (CheckpointZone.Current != null) return CheckpointZone.Current.GetPlayerSpawn(index);
         if (spawnPoints != null && spawnPoints.Length > 0 && spawnPoints[index % spawnPoints.Length] != null)
             return spawnPoints[index % spawnPoints.Length].position;
