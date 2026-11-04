@@ -1,3 +1,32 @@
+# CHANGELOG - bản 3.0: Chiến dịch nhiều màn
+
+## Kịch bản
+- 8 màn với cốt truyện ngày Tết miền Tây (xem `LEVELS.md`): Khiêng lẩu, Bắt gà, Cầu khỉ, Cửa hai chìa, Chạy lũ,
+  Bánh cưới, Gom xoài, Xe ba gác. Màn sau mở khoá khi qua màn trước; lưu sao tốt nhất từng màn.
+
+## Khung màn chơi
+- `LevelManager`: pha Giới thiệu (khoá điều khiển, hiện tên màn và nhiệm vụ) → Chơi (đồng hồ) → Thắng/Thua
+  → tự sang màn kế hoặc chơi lại; nút Chơi lại / Màn kế dùng được từ cả hai máy.
+- Chấm 1-3 sao: thấp nhất giữa sao thời gian và sao của nhiệm vụ, rơi khỏi map nhiều lần bị trừ sao.
+- 4 kiểu nhiệm vụ, có nhiệm vụ phụ: giao đồ dễ vỡ, gom vật vào vùng, cả hai cùng về đích, trụ được N giây.
+
+## Cơ chế mới
+- `Collectible`: vật nắm được. Gà chạy trốn và giãy khỏi tay; vật nặng cần 2 người kéo, có phản lực ghì người.
+- `KinematicMover`: bệ di động, ghe chạy vòng, quạt quay, búa con lắc. Tính theo tick nên không tốn băng thông;
+  người chơi đứng lên được chở theo.
+- `PressurePlate` + `LevelGate`: câu đố hai người (dây trói làm giới hạn khoảng cách), thùng nặng cũng nhấn được.
+- `RisingWater`: nước dâng, lội nước chậm, chìm thì về checkpoint hoặc thua nếu checkpoint đã ngập.
+- `WindVolume`: gió giật theo chu kỳ, vật nhẹ bị thổi mạnh hơn.
+- `KillVolume`, `ItemSpawner` (xoài rụng).
+
+## Giao diện & mạng
+- `LevelHUD`: bảng giới thiệu, danh sách nhiệm vụ, đồng hồ nhấp nháy khi sắp hết giờ, bảng kết quả có sao.
+- `LevelSelectMenu`: chọn màn (khoá/sao), tạo phòng ở màn đã chọn rồi gửi link mời, hoặc nhập mã để vào phòng bạn.
+- `NetworkRunnerHandler.JoinRoom`: nhập mã thì chỉ vào làm khách (gõ sai mã không còn bị ngồi một mình trong phòng trống).
+- Người chơi xuất hiện ở điểm xuất phát của màn; thanh nước lẩu tự ẩn ở màn không có nồi.
+
+---
+
 # CHANGELOG - bản 2.0
 
 ## Lỗi nghiêm trọng (game không chơi được)

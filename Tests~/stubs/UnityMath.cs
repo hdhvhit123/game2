@@ -61,6 +61,8 @@ namespace UnityEngine
         public Quaternion(float x, float y, float z, float w) { this.x = x; this.y = y; this.z = z; this.w = w; }
         public static Quaternion identity => new Quaternion(0, 0, 0, 1);
         public static Quaternion Euler(float x, float y, float z) => identity;
+        public static Quaternion AngleAxis(float angle, Vector3 axis) => identity;
+        public static Quaternion Inverse(Quaternion q) => q;
         public static Quaternion LookRotation(Vector3 f, Vector3 up) => identity;
         public static Quaternion Slerp(Quaternion a, Quaternion b, float t) => b;
         public static Quaternion operator *(Quaternion a, Quaternion b) => a;
@@ -81,6 +83,10 @@ namespace UnityEngine
 
     public static class Mathf
     {
+        public const float PI = (float)Math.PI;
+        public const float Deg2Rad = (float)(Math.PI / 180.0);
+        public static float Floor(float f) => (float)Math.Floor(f);
+        public static float PingPong(float t, float l) => t % l;
         public static float Clamp(float v, float a, float b) => v < a ? a : (v > b ? b : v);
         public static int Clamp(int v, int a, int b) => v < a ? a : (v > b ? b : v);
         public static float Clamp01(float v) => Clamp(v, 0f, 1f);

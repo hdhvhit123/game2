@@ -2,16 +2,16 @@
 
 Thư mục có dấu `~` nên Unity bỏ qua, không ảnh hưởng project.
 
-- `Tests.cs`: 48 bài kiểm thử cho phần logic thuần (mã phòng, lò xo nhân vật, cú nhảy, dây trói,
-  dây Verlet, mô hình nước lẩu, vòng đệm khung hình, ghép ảnh highlight).
+- `Tests.cs`, `LevelTests.cs`: 87 bài kiểm thử cho phần logic thuần (mã phòng, lò xo nhân vật, cú nhảy, dây trói,
+  dây Verlet, mô hình nước lẩu, vòng đệm khung hình, ghép ảnh highlight, luật màn chơi,
+  chấm sao, bệ di động, gió, lưu tiến độ).
 - `stubs/`: vỏ API UnityEngine / Photon Fusion 2 / Google Mobile Ads / NativeShare để biên dịch
   toàn bộ script bằng trình biên dịch C# thường (kiểm tra lỗi cú pháp, kiểu dữ liệu).
 
-Chạy (cần .NET SDK 8):
+Chạy (cần .NET SDK 8), từ thư mục gốc repo:
 
 ```bash
-dotnet new console -o T && rm T/Program.cs
-cp Tests.cs stubs/UnityMath.cs stubs/UnityEngineShell.cs T/
-cp ../Assets/_Project/Scripts/Core/RoomCode.cs ../Assets/_Project/Scripts/Physics/{RopeSolver,CoopPhysicsMath,PotStability}.cs ../Assets/_Project/Scripts/ViralEngine/FrameRing.cs T/
-cd T && dotnet run
+dotnet new console -o /tmp/T --use-program-main && rm /tmp/T/Program.cs
+cp $(find Assets -name "*.cs") Tests~/stubs/*.cs Tests~/*.cs /tmp/T/
+cd /tmp/T && dotnet run -p:ImplicitUsings=disable -p:Nullable=disable
 ```

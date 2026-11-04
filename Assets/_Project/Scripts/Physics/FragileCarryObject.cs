@@ -177,7 +177,7 @@ public class FragileCarryObject : NetworkBehaviour, ISlapReceiver
             for (int i = 0; i < all.Count; i++)
             {
                 SemiActiveRagdollController p = all[i];
-                if (p == null || p == otherCarrier || !p.IsGrabbing || p.IsStunned) continue;
+                if (p == null || p == otherCarrier || !p.IsGrabbing || p.IsStunned || p.IsCarrying) continue;
                 float d = Vector3.Distance(p.HandPosition, handle.position);
                 if (d < best) { best = d; result = p; }
             }
@@ -216,6 +216,12 @@ public class FragileCarryObject : NetworkBehaviour, ISlapReceiver
         if (!HasStateAuthority || IsShattered) return;
         _rb.AddForce(impulse * 0.5f, ForceMode.Impulse);
         _pendingImpactSpill += stability.slapSpill;
+    }
+
+    /// <summary>Vỡ ngay (ví dụ rơi vào vùng chết). Chỉ host.</summary>
+    public void ForceShatter()
+    {
+        if (HasStateAuthority && !IsDelivered) Shatter();
     }
 
     private void Shatter()

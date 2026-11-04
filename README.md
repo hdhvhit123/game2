@@ -1,7 +1,10 @@
-# Bị Trói Cùng Nhau (2-Player Physics Chaos) - Android Game Source Code, bản 2.0
+# Bị Trói Cùng Nhau (2-Player Physics Chaos) - Android Game Source Code, bản 3.0
 
 Game co-op vật lý 2 người: hai đứa bị trói chung một sợi dây, cùng khiêng nồi lẩu nóng tới bàn khách.
 Tối ưu cho viral TikTok/Zalo (mời 1 chạm, ảnh highlight "pha cay cú").
+
+**Bản 3.0:** chế độ chiến dịch 8 màn với 4 kiểu nhiệm vụ (giao đồ dễ vỡ, gom vật, cùng về đích, trụ được)
+và 7 cơ chế màn chơi. Kịch bản từng màn: xem **`LEVELS.md`**.
 
 ## Cấu trúc thư mục
 
@@ -11,12 +14,15 @@ Tối ưu cho viral TikTok/Zalo (mời 1 chạm, ảnh highlight "pha cay cú").
 | `Scripts/Player/` | `SemiActiveRagdollController` (Floating Capsule, nhảy, tát, dây trói, respawn, nghiêng thân, co giãn), `PlayerInputCollector`, `NetworkInputData`, `ISlapReceiver` |
 | `Scripts/Physics/` | `FragileCarryObject` (nồi lẩu), `PotStability` (luật sánh nước), `VerletRopeRenderer` + `RopeSolver` (vẽ dây), `CoopPhysicsMath` |
 | `Scripts/Gameplay/` | `CheckpointZone`, `DeliveryZone` (đích + chấm sao) |
+| `Scripts/Levels/` | `LevelManager` (giới thiệu → chơi → thắng/thua → màn kế), `LevelObjective`, `LevelRules`, `CampaignCatalog`, `CampaignProgress`, `Collectible`, `MoverPath` |
+| `Scripts/Levels/Objectives/` | `DeliverPotObjective`, `CollectObjective`, `ReachTogetherObjective`, `SurviveObjective` |
+| `Scripts/Levels/Mechanics/` | `KinematicMover` (bệ di động, quạt quay, con lắc), `PressurePlate` + `LevelGate`, `RisingWater`, `WindVolume`, `KillVolume`, `ItemSpawner` |
 | `Scripts/Visual/` | `CoopCameraRig` (camera đóng khung 2 người + rung), `HotpotVFX` (hơi nóng, nước bắn, nồi rung cảnh báo), `Haptics` |
-| `Scripts/UI/` | `CoopHUD`, `MobileJoystick`, `MobileButton` |
+| `Scripts/UI/` | `CoopHUD`, `LevelHUD` (nhiệm vụ, đồng hồ, kết quả), `LevelSelectMenu`, `MobileJoystick`, `MobileButton` |
 | `Scripts/ViralEngine/` | `DeepLinkManager`, `RingBufferRecorder` + `FrameRing` (ảnh highlight 6 khung), `VoiceDopplerEffect`, `MicrophonePermission` |
 | `Scripts/Monetization/` | `AdMobRewardCheckpoint` (quảng cáo "Bảo hiểm nồi lẩu") |
 | `Plugins/Android/` | AndroidManifest (Deep Link, micro, mạng, rung) |
-| `Tests~/` | 48 unit test + stub để biên dịch ngoài Unity (Unity bỏ qua thư mục này) |
+| `Tests~/` | 87 unit test + stub để biên dịch ngoài Unity (Unity bỏ qua thư mục này) |
 
 ## Cài đặt
 
@@ -37,7 +43,11 @@ Tối ưu cho viral TikTok/Zalo (mời 1 chạm, ảnh highlight "pha cay cú").
    Canvas có `CoopHUD`, joystick và 3 nút (Jump/Grab/Slap). Đặt các `CheckpointZone` dọc đường
    (tăng dần `order`) và một `DeliveryZone` ở đích.
 8. Player Settings > Package Name tự đặt (manifest không còn thuộc tính `package`).
-9. Trước khi phát hành: thay ID quảng cáo thử nghiệm, đưa file `assetlinks.json` lên tên miền mời,
+9. **Chiến dịch:** scene `Menu` (build index 0) có `NetworkRunnerHandler`, `LevelSelectMenu`; mỗi màn là một scene
+   trong `Assets/_Project/Scenes/` có `LevelManager` + nhiệm vụ. Hướng dẫn chi tiết từng màn trong `LEVELS.md`.
+   Thêm `KinematicMover`, `PressurePlate`, `LevelGate`, `RisingWater`, `WindVolume`, `ItemSpawner`, `LevelManager`
+   và các nhiệm vụ lên scene object có `NetworkObject`.
+10. Trước khi phát hành: thay ID quảng cáo thử nghiệm, đưa file `assetlinks.json` lên tên miền mời,
    viết lớp Java `com.studio.game.InstallReferrerBridge` nếu dùng Install Referrer.
 
 ## Điều khiển

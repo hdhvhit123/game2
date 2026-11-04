@@ -100,7 +100,9 @@ public class CoopHUD : MonoBehaviour
             if (danger > 0.3f) c = Color.Lerp(c, Color.white, (Mathf.Sin(Time.time * 18f) * 0.5f + 0.5f) * danger * 0.6f);
             soupFill.color = c;
         }
-        if (soupMeterRoot != null)
+        if (soupMeterRoot != null && soupMeterRoot.gameObject.activeSelf != potValid)
+            soupMeterRoot.gameObject.SetActive(potValid); // màn không có nồi lẩu thì ẩn thanh nước
+        if (soupMeterRoot != null && potValid)
         {
             float pulse = 1f + danger * 0.08f * Mathf.Sin(Time.time * 18f);
             soupMeterRoot.localScale = new Vector3(pulse, pulse, 1f);
@@ -140,6 +142,8 @@ public class CoopHUD : MonoBehaviour
 
     private void HandleDelivered(FragileCarryObject pot, int stars)
     {
+        // Màn chơi có LevelManager thì LevelHUD hiện bảng kết quả chung cho mọi loại nhiệm vụ.
+        if (LevelManager.Current != null) { ShowToast("Giao hàng thành công!"); return; }
         if (winPanel != null) winPanel.SetActive(true);
         if (winStars != null)
             for (int i = 0; i < winStars.Length; i++)
